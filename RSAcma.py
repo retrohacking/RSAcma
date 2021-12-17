@@ -109,9 +109,15 @@ script, vartype, filename = argv
 try:
 	myfile=open(filename, "r")
 except:
-	sys.exit("[-]Could not open the file "+filename+". Check that it exists or that is not corrupted")
-	
-components=readcomponents(vartype) #read modulus exponents and ciphertext
+	sys.exit("[-]Could not open the file "+filename+". Check that it exists or that is not corrupted.\n")
+
+try:
+	components=readcomponents(vartype) #read modulus exponents and ciphertext
+except:
+	if vartype=="hex":
+		sys.exit("[-]Components can't be read correctly. Try to switch to <int> instead.\n")
+	if vartype=="int":
+		sys.exit("[-]Components can't be read correctly. Try to switch to <hex> instead.\n")
 
 myfile.close()
 
