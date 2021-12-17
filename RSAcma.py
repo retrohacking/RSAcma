@@ -2,8 +2,9 @@ from sys import argv
 import sys
 import math
 import time
+from libnum import xgcd, invmod, n2s
 
-inverted=False
+
 
 def readcomponents(vartype):
 	if (vartype=="int"):
@@ -28,34 +29,13 @@ def readcomponents(vartype):
 Generate the parameter s1 and s2.
 It tries different combinations inverting the exponents and sometimes also the ciphertexts
 '''
-def genparameters(e1, e2, inverted):
+def genparameters(e1, e2):
 	s1=0
 	s2=0
 	if math.gcd(e1, e2)==1:
-		while (True):
-			s2=((e1*s1-1)/e2)
-			if(s2.is_integer()):
-				s2=int(-s2)
-				if (math.gcd(components[1], components[0])!=1 and math.gcd(components[2], components[0])!=1):
-					sys.exit("[-]None of the ciphertexts are coprime with the modulus. Quitting\n")
-
-
-				i=1
-				if inverted:
-					i=2
-				if (math.gcd(components[i], components[0])!=1):
-				
-
-					print("[=]Trying another combination\n")
-					inverted=True
-					s1,s2, inverted=genparameters(e2,e1, inverted)
-
-					return s1,s2, inverted
-				print("[+]Parameter s1: "+str(s1)+"\n[+]Parameter s2: "+str(s2)+"\n")
-				return s1, s2, inverted
-				break
-			else:
-				s1-=1
+		s1, s2, gcdn = xgcd(e1, e2)
+		print("[+]s1: "+str(s1)+"\n[+]s2: "+str(s2)+"\n")	
+		return s1,s2			
 	else:
 		sys.exit("[-]The two exponents "+str(e1)+" and "+str(e2)+" are not coprimes. Quitting"+"\n")
 		
@@ -65,63 +45,60 @@ If it seems stuck, pressing CTRL+C it catches the exception and tries a differen
 ciphertexts, finding new parameters s1 and s2 and trying again to decrypt. 
 If it does not work, the decryption fails.
 '''
-def decrypt(s1, s2, inverted):
+def decrypt(s1, s2):
 	mint=0
-	i=1
-	j=2
-	if inverted:
-		i=2
-		j=1
-		print("[=]Ciphertexts inverted\n")
 
 	print("[=]Decrypting: if the operation takes too much time(>1 minute), press Ctrl+C to try another combination\n")
 
-	try:
-		try: 
-
-			cinv=pow(components[i], -1, components[0]) #modular inverse
-			mint=int(((components[j]**s2)*(cinv**(-s1)))%components[0])
-
-		except:
-			print("[-]The parameter s1 and s2 have to be inverted"+"\n")
-			s1=-s1
-			s2=-s2
-			print("[+]Parameter s1: "+str(s1)+"\n[+]Parameter s2: "+str(s2)+"\n")
-			print("[=]Decrypting: if the operation takes too much time (>1 minute), press Ctrl+C to try another combination\n")
-
-
-			cinv=pow(components[i], -1, components[0]) #modular inverse
-			mint=int(((components[j]**s1)*(cinv**(-s2)))%components[0])
-
-
-		
-		mhex=hex(mint)[2:]
-		
-		try:
-			by=bytes.fromhex(mhex)
-			m=by.decode("ASCII")
-			print("[+]The integer decrypted message is:\n"+str(mint)+"\n")
-			print("[+]The hexadecimal decrypted message is:\n"+mhex+"\n")
-			print("[+]The decrypted message is:\n\t"+m+"\n")
-			end=time.time()
-			elapsed = time.strftime("%M:%S", time.gmtime(end - start))
-			print("Time elapsed: "+ str(elapsed))
-
-		except Exception as e:
-			print("[-]The file could not be converted to ASCII\n"+str(e)+"\n")
-			print("[=]Trying another combination\n")
-			if inverted:
-				sys.exit("[-]Decryption Failed. Quitting.\n")
-				
-			inverted=True
-			decrypt(s1, s2, inverted)
-	except:
-		if inverted:
-			sys.exit("[-]Decryption Failed. Quitting.\n")
+	
+	try: 
+		if s1<0:
 			
-		invert=True
-		s1,s2, inverted=genparameters(components[4],components[3], inverted)
-		decrypt(s1,s2,inverted)
+			cinv=pow(components[1], -1, components[0]) #modular inverse
+			mint=int(((components[2]**s2)*(cinv**(-s1)))%components[0])
+			
+		else:
+			if s2<0:
+
+				cinv=pow(components[2], -1, components[0]) #modular inverse
+				mint=int(((components[1]**s1)*(cinv**(-s2)))%components[0])
+
+		decode(mint)		
+		
+		
+	except:
+		try:
+			
+			print("[-]Trying another combination"+"\n")
+			if s2 < 0:
+				components[2] = invmod(components[2], components[0])
+				s2 = -s2
+				
+			if s1 < 0:
+				components[1] = invmod(components[1], components[0])
+				s1 = -s1
+				
+			mint=(pow(components[1],s1,components[0]) * pow(components[2],s2,components[0])) % components[0]
+			decode (mint)
+			
+		except:
+			sys.exit("[-]Decryption Failed. Quitting.")
+
+		
+#it takes the integer message and decrypts it showing the result and the time elapsed			
+def decode(mint):
+		mhex=hex(mint)[2:]
+
+
+		by=bytes.fromhex(mhex)
+		m=by.decode("ASCII")
+		print("[+]The integer decrypted message is:\n"+str(mint)+"\n")
+		print("[+]The hexadecimal decrypted message is:\n"+mhex+"\n")
+		print("[+]The decrypted message is:\n\t"+m+"\n")	
+		end=time.time()
+		elapsed = time.strftime("%M:%S", time.gmtime(end - start))
+		print("Time elapsed: "+ str(elapsed))	
+		
 
 #check if the arguments are correct
 if len(argv)!=3:
@@ -140,7 +117,7 @@ myfile.close()
 
 start=time.time()
 
-s1, s2, inverted= genparameters(components[3], components[4], inverted) 
+s1, s2= genparameters(components[3], components[4])
 
-decrypt(s1, s2, inverted)
+decrypt(s1, s2)
 

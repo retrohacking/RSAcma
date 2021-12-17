@@ -42,6 +42,12 @@ Hint: it generally doesn't take too much time to decrypt a file. If it is taking
 
 Hint2: if at the end of the procedure the decryption has failed, try to invert manually into the file the first ciphertext with the second and clearly the first exponent with the second. The script is correct but not perfect.
 
+<u>Optionally</u> you can install the requirements by running:
+
+```bash
+pip3 install -r requirements.txt
+```
+
 ### Examples
 
 The script is provided with a pair of examples: one for the hexadecimal strings, one for the integer strings. Here you can see the output for both of them:
@@ -104,5 +110,3 @@ Time elapsed: 00:00
 Well in the end remember that it's not a perfect script, but I've  tried to manage all the possible exceptions I've found, in the most efficient way. If you find any bug, or have any implementation suggestion you can contact me here:
 
   *retro4hack@gmail.com*
-
-
